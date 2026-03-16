@@ -153,24 +153,93 @@ JWT_SECRET=your-secret-key
 COOKIE_SECRET=your-cookie-secret
 ```
 
-### 7. Create Seed Data (if needed)
+### 7. Create Store Initialization Script (CRITICAL!)
 
-Create `backend/src/scripts/seed.ts` for sample data:
+**IMPORTANT:** Medusa v2 requires a complete initialization script that sets up infrastructure AND products with proper price linking.
+
+Create `backend/src/admin/initialize-store.ts`:
+
+**📚 MUST READ FIRST:** `.claude/knowledge/medusa-v2-architecture.md` - Contains the complete pattern you MUST follow.
+
+**Critical Pattern (from knowledge doc):**
+
 ```typescript
-import { MedusaContainer } from "@medusajs/framework/types"
+import { Modules } from "@medusajs/framework/utils"
 
-export default async function seed(container: MedusaContainer) {
-  // Create regions
-  const regionService = container.resolve("regionService")
+export default async function ({ container }: any) {
+  const logger = container.resolve("logger") as any
+  const productModuleService = container.resolve(Modules.PRODUCT) as any
+  const pricingModuleService = container.resolve(Modules.PRICING) as any
+  const regionModuleService = container.resolve(Modules.REGION) as any
+  const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL) as any
+  const remoteLink = container.resolve("remoteLink")
 
-  await regionService.create({
-    name: "US",
-    currency_code: "usd",
-    countries: ["us"],
+  // STEP 1: Create Region
+  const region = await regionModuleService.createRegions({
+    name: "India",
+    currency_code: "inr",
+    countries: ["in"],
   })
 
-  // Create product types, categories, etc.
+  // STEP 2: Create Sales Channel
+  const salesChannel = await salesChannelModuleService.createSalesChannels({
+    name: "Default Sales Channel",
+  })
+
+  // STEP 3: Create Product with Variants (NO prices!)
+  const product = await productModuleService.createProducts({
+    title: "Gaming Laptop",
+    handle: "gaming-laptop",
+    status: "published",
+    variants: [
+      { title: "Standard", sku: "LAP-STD" },
+      { title: "Pro", sku: "LAP-PRO" },
+    ],
+  })
+
+  // STEP 4: Create Price Sets (one per variant)
+  const prices = [99900, 149900] // Prices in paise/cents
+
+  for (let i = 0; i < product.variants.length; i++) {
+    const variant = product.variants[i]
+
+    // Create price set
+    const priceSet = await pricingModuleService.createPriceSets({
+      prices: [
+        {
+          amount: prices[i],
+          currency_code: "inr",
+        },
+      ],
+    })
+
+    // CRITICAL: Link variant to price set
+    await remoteLink.create({
+      [Modules.PRODUCT]: { variant_id: variant.id },
+      [Modules.PRICING]: { price_set_id: priceSet.id },
+    })
+  }
+
+  // STEP 5: Link product to sales channel
+  await remoteLink.create({
+    [Modules.PRODUCT]: { product_id: product.id },
+    [Modules.SALES_CHANNEL]: { sales_channel_id: salesChannel.id },
+  })
+
+  logger.info("✅ Store initialized with products + prices!")
 }
+```
+
+**Why this pattern is mandatory:**
+1. In Medusa v2, Product Module and Pricing Module are **separate**
+2. Variants and Prices must be **explicitly linked** using `remoteLink`
+3. If you skip the link step, variants will have `calculated_price: null`
+4. Read `.claude/knowledge/medusa-v2-architecture.md` for full explanation
+
+**Run after backend starts:**
+```bash
+cd backend
+npx medusa exec ./src/admin/initialize-store.ts
 ```
 
 ### 8. Verify Configuration

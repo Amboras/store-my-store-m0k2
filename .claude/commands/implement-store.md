@@ -64,33 +64,87 @@ cd backend && npm run build
 cd storefront && npm run build
 ```
 
-### 6. Local Testing
+### 6. Automated Testing & Validation (CRITICAL!)
 
-Start all services:
+**IMPORTANT:** Implementation is NOT complete until all validation tests pass.
+
+#### 6.1: Start Services
 
 ```bash
-# Start PostgreSQL and Redis
-cd backend && docker-compose up -d
+# Start backend + storefront
+make dev
 
-# Run database migrations
-cd backend && npm run migrate
-
-# Start Medusa backend
-cd backend && npm run dev
-
-# In another terminal, start storefront
-cd storefront && npm run dev
+# Wait for services to be ready
+sleep 10
 ```
 
 Verify:
 - Backend runs at http://localhost:9000
-- Admin dashboard at http://localhost:9000/app
 - Storefront runs at http://localhost:3000
-- No console errors
-- Can navigate pages
-- API connections work
+- No startup errors in logs
 
-### 7. Report Completion
+#### 6.2: Run Comprehensive Validation
+
+**Spawn the `store-validator` agent** to test:
+
+1. **Infrastructure Tests** (3 tests)
+   - Backend health check
+   - Admin dashboard access
+   - Storefront running
+
+2. **Product API Tests** (3 tests)
+   - Products endpoint returns data
+   - **CRITICAL:** Variants have prices (`calculated_price` not null)
+   - Product retrieval by handle
+
+3. **Cart Workflow Tests** (5 tests)
+   - Create cart
+   - Add item to cart
+   - Update quantity
+   - Remove item
+   - Retrieve cart
+
+4. **Region Tests** (2 tests)
+   - List regions
+   - Get region by ID
+
+5. **Storefront Tests** (3 tests)
+   - Homepage loads
+   - Product pages load
+   - No JavaScript errors
+
+6. **E2E Customer Journey** (1 comprehensive test)
+   - Browse products → view details → create cart → add item → update quantity → remove item
+
+**Total:** 17 comprehensive tests
+
+#### 6.3: Validation Results
+
+**If ALL tests pass (17/17):**
+- ✅ Implementation successful
+- ✅ Store is ready for use
+- ✅ Proceed to completion report
+
+**If ANY test fails:**
+- ❌ **STOP immediately**
+- ❌ Read error details from validator agent
+- ❌ Fix the underlying issue
+- ❌ Re-run validation
+- ❌ **DO NOT report completion until all tests pass**
+
+**Common failures and fixes:**
+
+| Failure | Cause | Fix |
+|---------|-------|-----|
+| `calculated_price: null` | Variants not linked to price sets | Re-run initialization script using correct Medusa v2 pattern (see `.claude/knowledge/medusa-v2-architecture.md`) |
+| "Variants do not have a price" | Same as above | Same as above |
+| Products not found | Initialization script not run | Run `npx medusa exec ./src/admin/initialize-store.ts` |
+| Cart creation fails | Region not configured | Check initialization script created region |
+| 401 Unauthorized | Publishable key not configured | Create API key and update `.env.local` |
+
+### 7. Report Completion (Only After Validation Passes!)
+
+**ONLY provide this report if validation passed 17/17 tests.**
 
 Provide user with:
 
@@ -98,41 +152,121 @@ Provide user with:
 ## Store Implementation Complete! ✅
 
 **Store ID**: {store-id}
-**Location**: `storefront/`
+**Location**: `storefront/` (in-place customization)
+
+### ✅ Validation Results
+
+**ALL TESTS PASSED (17/17)**
+
+| Test Suite | Status |
+|------------|--------|
+| Infrastructure (3 tests) | ✅ PASS |
+| Products API (3 tests) | ✅ PASS |
+| Cart Workflow (5 tests) | ✅ PASS |
+| Regions (2 tests) | ✅ PASS |
+| Storefront (3 tests) | ✅ PASS |
+| E2E Journey (1 test) | ✅ PASS |
+
+**Critical Checks:**
+- ✅ Products have prices (`calculated_price` populated)
+- ✅ Cart operations work (create, add, update, remove)
+- ✅ Region and sales channel configured
+- ✅ Publishable API key working
+- ✅ Complete customer journey works end-to-end
 
 ### Services Running
 
 - **Medusa Backend**: http://localhost:9000
-- **Admin Dashboard**: http://localhost:9000/app
+- **Admin Dashboard**: http://localhost:9000/app (Login: admin@{store}.com / supersecret123)
 - **Storefront**: http://localhost:3000
+
+### What Works Right Now
+
+✅ Browse products on storefront
+✅ View product details with prices
+✅ Add products to cart
+✅ Update cart quantities
+✅ Remove items from cart
+✅ Manage products in admin dashboard
+✅ Edit product prices in admin
+✅ Changes in admin visible on storefront immediately
 
 ### Next Steps
 
-1. **Access Admin Dashboard**
+1. **Add More Products** (Admin Dashboard)
    - Navigate to http://localhost:9000/app
-   - Create admin user
-   - Add products
+   - Go to Products → Create Product
+   - Add variants and prices
+   - Changes appear on storefront immediately
 
-2. **Test Storefront**
-   - Visit http://localhost:3000
-   - Browse products
-   - Test cart and checkout
-
-3. **Make Edits**
-   - Run `/edit-store` to make changes
+2. **Customize Further**
+   - Run `/edit-store` to make design changes
    - Edit files directly in `storefront/`
+   - Backend is solid - no need to touch `backend/`
 
-4. **Deploy**
-   - Run `/deploy-store` when ready for production
+3. **Deploy to Production**
+   - Run `/deploy-store` when ready
+   - Backend and storefront deploy separately
 
-### Configuration
+### Configuration Files
 
-Backend environment: `backend/.env`
-Storefront environment: `storefront/.env.local`
+- Backend environment: `backend/.env`
+- Storefront environment: `storefront/.env.local`
+- Publishable API Key: `{key}` (already configured)
+
+### Architecture Summary
+
+**Backend (Medusa v2):**
+- Region: {region name} ({currency})
+- Sales Channel: {channel name}
+- Stock Location: {location}
+- Products: {count} products with {variant count} total variants
+- All variants linked to price sets ✅
+
+**Storefront (Next.js 15):**
+- Connected to backend via Medusa JS SDK
+- Uses publishable API key for authentication
+- Server components for product pages
+- Client components for cart operations
 
 ### Documentation
 
-See `CLAUDE.md` for detailed documentation.
+- Architecture: `.claude/knowledge/medusa-v2-architecture.md`
+- Full guide: `CLAUDE.md`
+- Validation report: `VALIDATION_REPORT.md`
+
+### 🎉 Store is Ready!
+
+Users can start adding products in admin and they'll appear on storefront immediately.
+No iteration needed - everything works in one go!
+```
+
+**If validation failed:**
+
+```markdown
+## ❌ Implementation Incomplete - Validation Failed
+
+**Failed Tests:** {count}/{total}
+
+### Issues Detected
+
+{List of failed tests with error messages}
+
+### Root Cause
+
+{Diagnosis from validator agent}
+
+### Required Fixes
+
+{Specific fix instructions}
+
+### DO NOT USE STORE until fixes are applied and validation passes.
+
+Re-run validation after fixes:
+1. Fix the underlying issues
+2. Restart services
+3. Run validation again
+4. All tests must pass before store is usable
 ```
 
 ## Agents to Spawn
