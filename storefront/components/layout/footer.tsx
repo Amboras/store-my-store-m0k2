@@ -46,13 +46,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-block">
-              <span className="font-heading text-2xl font-semibold">
-                Store
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-8 h-8 bg-lime-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-900 font-black text-sm">LT</span>
+              </div>
+              <span className="font-heading text-xl font-bold tracking-tight text-gray-900">
+                LifeTrack<span className="text-lime-500">Pro</span>
               </span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Curated products crafted with care. Quality you can feel, design you can see.
+              The all-in-one digital habit tracker and life system. Built for high performers. Designed to create lasting change.
             </p>
           </div>
 
@@ -102,7 +105,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Store. All rights reserved.
+            &copy; {new Date().getFullYear()} LifeTrackPro. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <button

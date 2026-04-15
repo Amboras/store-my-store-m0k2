@@ -82,26 +82,42 @@ export default function Header() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <span className="font-heading text-2xl font-semibold tracking-tight">
-                Store
+              <div className="w-8 h-8 bg-lime-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-900 font-black text-sm">LT</span>
+              </div>
+              <span className="font-heading text-xl font-bold tracking-tight text-gray-900">
+                LifeTrack<span className="text-lime-500">Pro</span>
               </span>
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-8">
-              <Link href="/products" className="text-sm tracking-wide uppercase link-underline py-1" prefetch={true}>
-                Shop All
+              <Link href="/products" className="text-sm tracking-wide font-medium link-underline py-1" prefetch={true}>
+                Shop
               </Link>
-              {collections?.slice(0, 4).map((collection: any) => (
+              <Link href="/about" className="text-sm tracking-wide font-medium link-underline py-1" prefetch={true}>
+                How It Works
+              </Link>
+              <Link href="/faq" className="text-sm tracking-wide font-medium link-underline py-1" prefetch={true}>
+                FAQ
+              </Link>
+              {collections?.slice(0, 2).map((collection: any) => (
                 <Link
                   key={collection.id}
                   href={`/collections/${collection.handle}`}
-                  className="text-sm tracking-wide uppercase link-underline py-1"
+                  className="text-sm tracking-wide font-medium link-underline py-1"
                   prefetch={true}
                 >
                   {collection.title}
                 </Link>
               ))}
+              <Link
+                href="/products"
+                className="ml-2 inline-flex items-center gap-1.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold text-xs uppercase tracking-wide px-5 py-2.5 rounded-sm transition-colors"
+                prefetch={true}
+              >
+                Get Access
+              </Link>
             </nav>
 
             {/* Actions */}
